@@ -1,0 +1,70 @@
+provider "aws" {
+  region = "eu-north-1"
+}
+
+data "aws_ami" "debian" {
+  most_recent = true
+  owners      = ["136693071363"]
+
+  filter {
+    name   = "name"
+    values = ["debian-13-amd64-*"]
+  }
+}
+
+resource "aws_key_pair" "admin" {
+  key_name   = "cle-srv-test"
+  public_key = file("~/.ssh/id_ed25519.pub")
+}
+
+resource "aws_security_group" "ssh" {
+  name        = "ssh-depuis-srv-test"
+  description = "SSH depuis srv-test"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["172.31.17.136/32"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["172.31.17.136/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "vm" {
+  count         = 3
+  ami           = data.aws_ami.debian.id
+  instance_type = "t3.micro"
+  key_name               = aws_key_pair.admin.key_name
+  vpc_security_group_ids = [aws_security_group.ssh.id]
+
+  credit_specification {
+    cpu_credits = "standard"
+  }
+
+  tags = {
+    Name = "srv-terraform-0${count.index + 1}"
+  }
+}
+
+output "ip_privee" {
+  value = aws_instance.vm[*].private_ip
+}
+resource "local_file" "inventaire" {
+  filename = "${path.module}/../ansible-lab/inventaire.ini"
+  content  = templatefile("${path.module}/inventaire.tpl", {
+    vms = [for vm in aws_instance.vm : { nom = vm.tags.Name, ip = vm.private_ip }]
+  })
+}

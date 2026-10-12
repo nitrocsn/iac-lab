@@ -1,0 +1,11 @@
+server {
+    listen {{ port_web }} default_server;
+    root /var/www/html;
+    index index.html;
+
+    add_header X-Serveur "{{ inventory_hostname }}";
+
+    location /sante {
+        return 200 "OK depuis {{ inventory_hostname }}\n";
+    }
+}

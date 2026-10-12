@@ -1,0 +1,9 @@
+# Terraform : providers telecharges
+**/.terraform/
+
+# Terraform : state et sauvegardes
+*.tfstate
+*.tfstate.*
+
+# Genere automatiquement par Terraform
+ansible-lab/inventaire.ini

@@ -1,0 +1,36 @@
+- name: Installer nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Deposer la page d'accueil
+  ansible.builtin.copy:
+    content: "Bonjour depuis {{ inventory_hostname }}, {{ message_accueil }}\n"
+    dest: /var/www/html/index.html
+
+- name: Deposer la configuration du site
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: /etc/nginx/sites-available/lab
+  notify: Recharger nginx
+
+- name: Activer le site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/lab
+    dest: /etc/nginx/sites-enabled/lab
+    state: link
+  notify: Recharger nginx
+
+- name: Desactiver le site par defaut
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Recharger nginx
+
+- name: Demarrer nginx et l'activer au demarrage
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true

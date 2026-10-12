@@ -1,0 +1,2 @@
+port_web: 80
+message_accueil: "configure par Ansible"
