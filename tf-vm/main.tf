@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-north-1"
+  region = var.region
 }
 
 data "aws_ami" "debian" {
@@ -22,17 +22,17 @@ resource "aws_security_group" "ssh" {
   description = "SSH depuis srv-test"
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["172.31.17.136/32"]
-  }
-
-  ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["172.31.17.136/32"]
+    cidr_blocks = [var.cidr_admin]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [var.cidr_admin]
   }
 
   egress {
@@ -44,9 +44,9 @@ resource "aws_security_group" "ssh" {
 }
 
 resource "aws_instance" "vm" {
-  count         = 3
-  ami           = data.aws_ami.debian.id
-  instance_type = "t3.micro"
+  count                  = var.nombre_vm
+  ami                    = data.aws_ami.debian.id
+  instance_type          = var.type_instance
   key_name               = aws_key_pair.admin.key_name
   vpc_security_group_ids = [aws_security_group.ssh.id]
 
@@ -55,16 +55,13 @@ resource "aws_instance" "vm" {
   }
 
   tags = {
-    Name = "srv-terraform-0${count.index + 1}"
+    Name = format("%s-%02d", var.prefixe_nom, count.index + 1)
   }
 }
 
-output "ip_privee" {
-  value = aws_instance.vm[*].private_ip
-}
 resource "local_file" "inventaire" {
   filename = "${path.module}/../ansible-lab/inventaire.ini"
-  content  = templatefile("${path.module}/inventaire.tpl", {
+  content = templatefile("${path.module}/inventaire.tpl", {
     vms = [for vm in aws_instance.vm : { nom = vm.tags.Name, ip = vm.private_ip }]
   })
 }
