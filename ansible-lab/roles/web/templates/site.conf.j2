@@ -8,4 +8,10 @@ server {
     location /sante {
         return 200 "OK depuis {{ inventory_hostname }}\n";
     }
+
+    location /admin {
+        auth_basic "Zone admin";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        try_files /index.html =404;
+    }
 }

@@ -5,6 +5,21 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: Installer passlib pour generer le fichier de mots de passe
+  ansible.builtin.apt:
+    name: python3-passlib
+    state: present
+
+- name: Creer le compte de la zone admin
+  community.general.htpasswd:
+    path: /etc/nginx/.htpasswd
+    name: "{{ admin_web_utilisateur }}"
+    password: "{{ admin_web_password }}"
+    owner: root
+    group: www-data
+    mode: "0640"
+  no_log: true
+
 - name: Deposer la page d'accueil
   ansible.builtin.copy:
     content: "Bonjour depuis {{ inventory_hostname }}, {{ message_accueil }}\n"
