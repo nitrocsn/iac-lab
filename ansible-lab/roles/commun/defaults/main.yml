@@ -1,0 +1,7 @@
+fuseau_horaire: Europe/Paris
+admin_utilisateur: dylan
+paquets_communs:
+  - ufw
+  - htop
+  - curl
+  - vim

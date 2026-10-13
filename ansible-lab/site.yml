@@ -2,4 +2,5 @@
   hosts: lab
   become: true
   roles:
+    - commun
     - web

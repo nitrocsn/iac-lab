@@ -1,0 +1,48 @@
+- name: Mettre a jour les paquets
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: safe
+
+- name: Installer les outils de base
+  ansible.builtin.apt:
+    name: "{{ paquets_communs }}"
+    state: present
+
+- name: Regler le fuseau horaire
+  community.general.timezone:
+    name: "{{ fuseau_horaire }}"
+
+- name: Creer le compte d'administration
+  ansible.builtin.user:
+    name: "{{ admin_utilisateur }}"
+    groups: sudo
+    append: true
+    shell: /bin/bash
+
+- name: Autoriser la cle SSH du compte d'administration
+  ansible.posix.authorized_key:
+    user: "{{ admin_utilisateur }}"
+    key: "{{ lookup('ansible.builtin.file', '~/.ssh/id_ed25519.pub') }}"
+
+- name: Autoriser sudo sans mot de passe
+  ansible.builtin.copy:
+    content: "{{ admin_utilisateur }} ALL=(ALL) NOPASSWD:ALL\n"
+    dest: "/etc/sudoers.d/{{ admin_utilisateur }}"
+    mode: "0440"
+    validate: visudo -cf %s
+
+- name: Autoriser SSH dans le pare-feu
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Refuser par defaut les connexions entrantes
+  community.general.ufw:
+    default: deny
+    direction: incoming
+
+- name: Activer le pare-feu
+  community.general.ufw:
+    state: enabled

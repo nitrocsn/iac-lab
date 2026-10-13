@@ -34,3 +34,9 @@
     name: nginx
     state: started
     enabled: true
+
+- name: Autoriser le port web dans le pare-feu
+  community.general.ufw:
+    rule: allow
+    port: "{{ port_web }}"
+    proto: tcp
